@@ -61,7 +61,7 @@ class EOS:
         string = ''
         with open(filename, 'r') as f:
             for line in f.readlines():
-                if line.strip() != '\n':
+                if line.strip() != '':
                     string += '{}\n'.format(line.strip())
 
             return string
