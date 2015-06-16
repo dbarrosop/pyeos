@@ -87,6 +87,6 @@ class TestEOS(unittest.TestCase):
         self.assertTrue(result)
 
     def test_get_interface_config(self):
-        self.device.load_running_config()
-        interface = self.device.running_config['interface Ethernet2']
+        config = self.device.get_config()
+        interface = config['interface Ethernet2']
         self.assertGreater(len(interface), 0)

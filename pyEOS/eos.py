@@ -14,7 +14,6 @@
 
 from jsonrpclib import Server
 from jsonrpclib import ProtocolError
-from config import EOSConf
 
 import exceptions
 
@@ -39,8 +38,7 @@ class EOS:
         self.device = None
         self.password = password
         self.use_ssl = use_ssl
-        self.running_config = EOSConf('running')
-        self.candidate_config = EOSConf('candidate')
+        self.candidate_config = None
         self.original_config = None
 
     def __getattr__(self, item):
@@ -57,6 +55,16 @@ class EOS:
             return wrapper
         else:
             raise AttributeError("type object '%s' has no attribute '%s'" % (self.__class__.__name__, item))
+
+    @staticmethod
+    def _load_file(filename):
+        string = ''
+        with open(filename, 'r') as f:
+            for line in f.readlines():
+                if line != '\n':
+                    string += line
+
+            return string
 
     def open(self):
         """
@@ -146,12 +154,6 @@ class EOS:
         elif format == 'text':
             return self.run_commands(['sh running-config'], format='text')[1]['output']
 
-    def load_running_config(self):
-        """
-        Populates the attribute running_config with the running configuration of the device.
-        """
-        self.running_config.load_config(config=self.get_config(format('text')))
-
     def load_candidate_config(self, filename=None, config=None):
         """
         Populates the attribute candidate_config with the desired configuration. You can populate it from a file or
@@ -162,9 +164,9 @@ class EOS:
         """
 
         if filename is not None:
-            self.candidate_config.load_config(filename=filename)
+            self.candidate_config = self._load_file(filename)
         else:
-            self.candidate_config.load_config(config=config)
+            self.candidate_config = config
 
     def compare_config(self, session=None):
         """
@@ -175,7 +177,7 @@ class EOS:
 
         # We get the config in text format because you get better printability by parsing and using an OrderedDict
 
-        cmds = self.candidate_config.to_string().splitlines()
+        cmds = self.candidate_config.splitlines()
 
         cmds.insert(0, 'configure session pyeos-diff')
         cmds.insert(1, 'rollback clean-config')
@@ -199,7 +201,7 @@ class EOS:
 
         """
         if config is None:
-            config = self.candidate_config.to_string()
+            config = self.candidate_config
 
         if force:
             force_text = 'ignore-errors'
