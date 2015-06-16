@@ -166,7 +166,7 @@ class EOS:
         else:
             self.candidate_config.load_config(config=config)
 
-    def compare_config(self):
+    def compare_config(self, session=None):
         """
 
         :return: A string showing the difference between the running_config and the candidate_config. The running_config is
@@ -174,8 +174,19 @@ class EOS:
         """
 
         # We get the config in text format because you get better printability by parsing and using an OrderedDict
-        self.load_running_config()
-        return self.running_config.compare_config(self.candidate_config)
+
+        cmds = self.candidate_config.to_string().splitlines()
+
+        cmds.insert(0, 'configure session pyeos-diff')
+        cmds.insert(1, 'rollback clean-config')
+
+        self.run_commands(cmds)
+
+        diff = self.run_commands(['show session-config named pyeos-diff diffs'], format='text')
+
+        self.run_commands(['configure session pyeos-diff', 'abort'])
+
+        return diff[1]['output'][:-1]
 
     def replace_config(self, config=None, force=False):
         """

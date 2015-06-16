@@ -62,7 +62,6 @@ class TestEOS(unittest.TestCase):
         # Reverting changes
         self.device.load_candidate_config(filename='configs/initial.conf')
         self.device.replace_config()
-
         self.assertEqual(len(diff), 0)
 
     def test_loading_config_with_typo(self):
@@ -70,7 +69,7 @@ class TestEOS(unittest.TestCase):
         self.assertRaises(exceptions.ConfigReplaceError, self.device.replace_config)
 
     def test_loading_modified_config_and_diff(self):
-        intended_diff = u'+ hostname pyeos-unittest-changed\n- hostname pyeos-unittest\nrouter bgp 65000\n   vrf test\n     + neighbor 1.1.1.2 maximum-routes 12000\n     + neighbor 1.1.1.2 remote-as 1\n     - neighbor 1.1.1.1 remote-as 1\n     - neighbor 1.1.1.1 maximum-routes 12000\n   vrf test2\n     + neighbor 2.2.2.3 remote-as 2\n     + neighbor 2.2.2.3 maximum-routes 12000\n     - neighbor 2.2.2.2 remote-as 2\n     - neighbor 2.2.2.2 maximum-routes 12000\ninterface Ethernet2\n+ description ble\n- description bla\n'
+        intended_diff = '--- system:/running-config\n+++ session:/pyeos-diff-session-config\n@@ -4,7 +4,7 @@\n !\n transceiver qsfp default-mode 4x10G\n !\n-hostname pyeos-unittest\n+hostname pyeos-unittest-changed\n !\n spanning-tree mode mstp\n !\n@@ -19,7 +19,7 @@\n interface Ethernet1\n !\n interface Ethernet2\n-   description bla\n+   description ble\n !\n interface Ethernet3\n !\n@@ -32,12 +32,12 @@\n !\n router bgp 65000\n    vrf test\n-      neighbor 1.1.1.1 remote-as 1\n-      neighbor 1.1.1.1 maximum-routes 12000 \n+      neighbor 1.1.1.2 remote-as 1\n+      neighbor 1.1.1.2 maximum-routes 12000 \n    !\n    vrf test2\n-      neighbor 2.2.2.2 remote-as 2\n-      neighbor 2.2.2.2 maximum-routes 12000 \n+      neighbor 2.2.2.3 remote-as 2\n+      neighbor 2.2.2.3 maximum-routes 12000 \n !\n management api http-commands\n    no shutdown\n'
         self.device.load_candidate_config(filename='configs/new_good.conf')
         diff = self.device.compare_config()
         self.assertEqual(unicode(diff), unicode(intended_diff))
